@@ -1,5 +1,7 @@
 *.pyc
 *.o
+*.pem
 wsproxy
 tests/data_*.js
 utils/rebind.so
+

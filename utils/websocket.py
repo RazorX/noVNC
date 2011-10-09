@@ -737,6 +737,7 @@ Sec-WebSocket-Accept: %s\r
         self.base64     = False
         self.rec        = None
         self.start_time = int(time.time()*1000)
+        self.client_address = address[0]
 
         # handler process
         try:

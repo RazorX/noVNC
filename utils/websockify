@@ -14,6 +14,8 @@ as taken from http://docs.python.org/dev/library/ssl.html#certificates
 import socket, optparse, time, os, sys, subprocess
 from select import select
 from websocket import WebSocketServer
+from urlparse import urlparse, parse_qs
+from auth import AuthMgr
 
 class WebSocketProxy(WebSocketServer):
     """
@@ -123,7 +125,7 @@ Traffic Legend:
                 else:
                     self.run_wrap_cmd()
 
-    # 
+    #
     # Routines above this point are run in the master listener
     # process.
     #
@@ -138,9 +140,19 @@ Traffic Legend:
         Called after a new WebSocket connection has been established.
         """
 
+        try:
+          qs = parse_qs(urlparse(self.path).query)
+          token = qs.get('token')
+          self.target_token = token[0]
+        except:
+          raise
+
+
+        self.authenticate()
+
         # Connect to the target
-        self.msg("connecting to: %s:%s" % (
-                 self.target_host, self.target_port))
+        self.msg("connecting to: %s:%s with the token of %s" % (
+                 self.target_host, self.target_port, self.target_token))
         tsock = self.socket(self.target_host, self.target_port,
                 connect=True)
 
@@ -166,9 +178,19 @@ Traffic Legend:
         c_pend = 0
         tqueue = []
         rlist = [self.client, target]
+        tryAuth = time.time() + 15
 
         while True:
             wlist = []
+
+            if tryAuth <= time.time():
+              print 'Time to check auth!!!'
+              tryAuth = time.time() + 15
+              try:
+                self.authenticate()
+              except:
+                self.send_close()
+                raise self.EClose(closed)
 
             if tqueue: wlist.append(target)
             if cqueue or c_pend: wlist.append(self.client)
@@ -212,6 +234,19 @@ Traffic Legend:
                     # TODO: What about blocking on client socket?
                     self.send_close()
                     raise self.EClose(closed)
+
+    def authenticate(self):
+        """
+        Check if token is good and set target
+        """
+        self.msg("Attepting to authenticate connection from %s with token of %s" % (self.client_address,self.target_token))
+        try:
+          target = AuthMgr.getTarget(self.target_token,self.client_address).split(':')
+        except:
+          raise
+        self.target_host = target[0]
+        self.target_port = int(target[1])
+
 
 if __name__ == '__main__':
     usage = "\n    %prog [options]"
@@ -280,3 +315,4 @@ if __name__ == '__main__':
     # Create and start the WebSockets proxy
     server = WebSocketProxy(**opts.__dict__)
     server.start_server()
+

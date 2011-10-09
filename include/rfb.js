@@ -36,6 +36,7 @@ var that           = {},  // Public API methods
     rfb_port       = 5900,
     rfb_password   = '',
     rfb_path       = '',
+    rfb_token      = '',
 
     rfb_state      = 'disconnected',
     rfb_version    = 0,
@@ -61,7 +62,7 @@ var that           = {},  // Public API methods
         ],
 
     encHandlers    = {},
-    encNames       = {}, 
+    encNames       = {},
     encStats       = {},     // [rectCnt, rectCntTot]
 
     ws             = null,   // Websock object
@@ -82,7 +83,7 @@ var that           = {},  // Public API methods
         bytes          : 0,
         x              : 0,
         y              : 0,
-        width          : 0, 
+        width          : 0,
         height         : 0,
         encoding       : 0,
         subencoding    : -1,
@@ -273,7 +274,7 @@ function connect() {
     } else {
         uri = "ws://";
     }
-    uri += rfb_host + ":" + rfb_port + "/" + rfb_path;
+    uri += rfb_host + ":" + rfb_port + "/" + rfb_path + "?token=" + rfb_token;
     Util.Info("connecting to " + uri);
     ws.open(uri);
 
@@ -338,7 +339,7 @@ print_stats = function() {
  *   fatal        - failed to load page, or fatal error
  *
  * RFB protocol initialization states:
- *   ProtocolVersion 
+ *   ProtocolVersion
  *   Security
  *   Authentication
  *   password     - waiting for password, not part of RFB
@@ -355,7 +356,7 @@ updateState = function(state, statusMsg) {
         return;
     }
 
-    /* 
+    /*
      * These are disconnected states. A previous connect may
      * asynchronously cause a connection so make sure we are closed.
      */
@@ -428,7 +429,7 @@ updateState = function(state, statusMsg) {
 
 
     case 'connect':
-        
+
         connTimer = setTimeout(function () {
                 fail("Connect timeout");
             }, conf.connectTimeout * 1000);
@@ -646,7 +647,7 @@ init_msg = function() {
             default:
                 return fail("Invalid server version " + sversion);
         }
-        if (rfb_version > rfb_max_version) { 
+        if (rfb_version > rfb_max_version) {
             rfb_version = rfb_max_version;
         }
 
@@ -667,7 +668,7 @@ init_msg = function() {
 
     case 'Security' :
         if (rfb_version >= 3.7) {
-            // Server sends supported list, client decides 
+            // Server sends supported list, client decides
             num_types = ws.rQshift8();
             if (ws.rQwait("security type", num_types, 1)) { return false; }
             if (num_types === 0) {
@@ -686,7 +687,7 @@ init_msg = function() {
             if (rfb_auth_scheme === 0) {
                 return fail("Unsupported security types: " + types);
             }
-            
+
             ws.send([rfb_auth_scheme]);
         } else {
             // Server decides
@@ -730,7 +731,7 @@ init_msg = function() {
                 response = genDES(rfb_password, challenge);
                 //Util.Debug("Response: " + response +
                 //           " (" + response.length + ")");
-                
+
                 //Util.Debug("Sending DES encrypted auth response");
                 ws.send(response);
                 updateState('SecurityResult');
@@ -795,7 +796,7 @@ init_msg = function() {
         blue_shift     = ws.rQshift8();
         ws.rQshiftStr(3); // padding
 
-        Util.Info("Screen: " + fb_width + "x" + fb_height + 
+        Util.Info("Screen: " + fb_width + "x" + fb_height +
                   ", bpp: " + bpp + ", depth: " + depth +
                   ", big_endian: " + big_endian +
                   ", true_color: " + true_color +
@@ -828,7 +829,7 @@ init_msg = function() {
         response = response.concat(fbUpdateRequests());
         timing.fbu_rt_start = (new Date()).getTime();
         ws.send(response);
-        
+
         /* Start pushing/polling */
         setTimeout(checkEvents, conf.check_rate);
         setTimeout(scan_tight_imgQ, scan_imgQ_rate);
@@ -865,7 +866,7 @@ normal_msg = function() {
         ws.rQshift8();  // Padding
         first_colour = ws.rQshift16(); // First colour
         num_colours = ws.rQshift16();
-        for (c=0; c < num_colours; c+=1) { 
+        for (c=0; c < num_colours; c+=1) {
             red = ws.rQshift16();
             //Util.Debug("red before: " + red);
             red = parseInt(red / 256, 10);
@@ -1098,7 +1099,7 @@ encHandlers.HEXTILE = function display_hextile() {
     //Util.Debug(">> display_hextile");
     var subencoding, subrects, color, cur_tile,
         tile_x, x, w, tile_y, y, h, xy, s, sx, sy, wh, sw, sh,
-        rQ = ws.get_rQ(), rQi = ws.get_rQi(); 
+        rQ = ws.get_rQ(), rQi = ws.get_rQi();
 
     if (FBU.tiles === 0) {
         FBU.tiles_x = Math.ceil(FBU.width/16);
@@ -1526,9 +1527,10 @@ clientCutText = function(text) {
 // Public API interface functions
 //
 
-that.connect = function(host, port, password, path) {
+that.connect = function(host, port, password, path, token) {
     //Util.Debug(">> connect");
 
+    rfb_token      = token;
     rfb_host       = host;
     rfb_port       = port;
     rfb_password   = (password !== undefined)   ? password : "";
@@ -1602,6 +1604,7 @@ that.testMode = function(override_send) {
     that.connect = function(host, port, password) {
             rfb_host = host;
             rfb_port = port;
+            rfb_token = token;
             rfb_password = password;
             updateState('ProtocolVersion', "Starting VNC handshake");
         };
@@ -1611,3 +1614,4 @@ that.testMode = function(override_send) {
 return constructor();  // Return the public API interface
 
 }  // End of RFB()
+

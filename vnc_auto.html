@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-    <!-- 
+    <!--
     noVNC Example: Automatically connect on page load.
     Copyright (C) 2011 Joel Martin
     Licensed under LGPL-3 (see LICENSE.txt)
@@ -13,7 +13,7 @@
         <meta http-equiv="X-UA-Compatible" content="chrome=1">
         <link rel="stylesheet" href="include/base.css" title="plain">
         <!--
-        <script type='text/javascript' 
+        <script type='text/javascript'
             src='http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js'></script>
         -->
         <script src="include/vnc.js"></script>
@@ -84,7 +84,7 @@
         }
 
         window.onload = function () {
-            var host, port, password, path;
+            var host, port, password, path, token;
 
             $D('sendCtrlAltDelButton').style.display = "inline";
             $D('sendCtrlAltDelButton').onclick = sendCtrlAltDel;
@@ -92,6 +92,7 @@
             document.title = unescape(WebUtil.getQueryVar('title', 'noVNC'));
             host = WebUtil.getQueryVar('host', null);
             port = WebUtil.getQueryVar('port', null);
+            token = WebUtil.getQueryVar('token', null);
             password = WebUtil.getQueryVar('password', '');
             path = WebUtil.getQueryVar('path', '');
             if ((!host) || (!port)) {
@@ -101,13 +102,13 @@
             }
 
             rfb = new RFB({'target':       $D('noVNC_canvas'),
-                           'encrypt':      WebUtil.getQueryVar('encrypt', false),
+                           'encrypt':      WebUtil.getQueryVar('encrypt', true),
                            'true_color':   WebUtil.getQueryVar('true_color', true),
                            'local_cursor': WebUtil.getQueryVar('cursor', true),
                            'shared':       WebUtil.getQueryVar('shared', true),
                            'updateState':  updateState,
                            'onPasswordRequired':  passwordRequired});
-            rfb.connect(host, port, password, path);
+            rfb.connect(host, port, password, path, token);
         };
         </script>
 
