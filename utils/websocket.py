@@ -400,7 +400,7 @@ Sec-WebSocket-Accept: %s\r
             print("% 3d: %s" % (self.handler_id, msg))
         else:
             f = open('/var/log/noVNC/log','a+')
-            f.write(msg+"\n")
+            f.write("% 3d: %s\n" % (self.handler_id, msg))
             f.close()
 
     def vmsg(self, msg):
