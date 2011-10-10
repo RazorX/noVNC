@@ -398,6 +398,10 @@ Sec-WebSocket-Accept: %s\r
         """ Output message with handler_id prefix. """
         if not self.daemon:
             print("% 3d: %s" % (self.handler_id, msg))
+        else:
+            f = open('/var/log/noVNC/log','a+')
+            f.write(msg+"\n")
+            f.close()
 
     def vmsg(self, msg):
         """ Same as msg() but only if verbose. """
