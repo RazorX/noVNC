@@ -151,8 +151,7 @@ Traffic Legend:
         self.authenticate()
 
         # Connect to the target
-        self.msg("connecting to: %s:%s with the token of %s" % (
-                 self.target_host, self.target_port, self.target_token))
+        self.msg("%s: Proxing to %s:%s" % (self.client_address, self.target_host, self.target_port))
         tsock = self.socket(self.target_host, self.target_port,
                 connect=True)
 
@@ -239,7 +238,7 @@ Traffic Legend:
         """
         Check if token is good and set target
         """
-        self.msg("Attepting to authenticate connection from %s with token of %s" % (self.client_address,self.target_token))
+        self.msg("%s: Authenticating connection with token of %s" % (self.client_address,self.target_token))
         try:
           target = AuthMgr.getTarget(self.target_token,self.client_address).split(':')
         except:
