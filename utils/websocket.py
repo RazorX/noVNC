@@ -17,7 +17,7 @@ as taken from http://docs.python.org/dev/library/ssl.html#certificates
 '''
 
 import os, sys, time, errno, signal, socket, traceback, select
-import struct, array
+import struct, array, datetime
 from cgi import parse_qsl
 from base64 import b64encode, b64decode
 
@@ -69,6 +69,8 @@ class WebSocketServer(object):
 
     buffer_size = 65536
 
+    connect_timeout = 5
+
     server_handshake_hixie = """HTTP/1.1 101 Web Socket Protocol Handshake\r
 Upgrade: WebSocket\r
 Connection: Upgrade\r
@@ -95,17 +97,17 @@ Sec-WebSocket-Accept: %s\r
             run_once=False, timeout=0):
 
         # settings
-        self.verbose        = verbose
-        self.listen_host    = listen_host
-        self.listen_port    = listen_port
-        self.ssl_only       = ssl_only
-        self.daemon         = daemon
-        self.run_once       = run_once
-        self.timeout        = timeout
+        self.verbose          = verbose
+        self.listen_host      = listen_host
+        self.listen_port      = listen_port
+        self.ssl_only         = ssl_only
+        self.daemon           = daemon
+        self.run_once         = run_once
+        self.timeout          = timeout
 
-        self.launch_time    = time.time()
-        self.ws_connection  = False
-        self.handler_id     = 1
+        self.launch_time      = time.time()
+        self.ws_connection    = False
+        self.handler_id       = 1
 
         # Make paths settings absolute
         self.cert = os.path.abspath(cert)
@@ -173,6 +175,7 @@ Sec-WebSocket-Accept: %s\r
             addrs.reverse()
         sock = socket.socket(addrs[0][0], addrs[0][1])
         if connect:
+            sock.settimeout(WebSocketServer.connect_timeout)
             sock.connect(addrs[0][4])
         else:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -396,11 +399,12 @@ Sec-WebSocket-Accept: %s\r
 
     def msg(self, msg):
         """ Output message with handler_id prefix. """
+	time = datetime.datetime.now().strftime("%s")
         if not self.daemon:
             print("% 3d: %s" % (self.handler_id, msg))
         else:
             f = open('/var/log/noVNC/log','a+')
-            f.write("% 3d: %s\n" % (self.handler_id, msg))
+            f.write("%s : %d : %s\n" % (time, self.handler_id, msg))
             f.close()
 
     def vmsg(self, msg):
@@ -688,7 +692,7 @@ Sec-WebSocket-Accept: %s\r
             if 'base64' in protocols:
                 response += "%sWebSocket-Protocol: base64\r\n" % pre
             else:
-                self.msg("Warning: client does not report 'base64' protocol support")
+                self.msg("%s: Warning: client does not report 'base64' protocol support" % (address[0]) )
             response += "\r\n" + trailer
 
         self.msg("%s: %s WebSocket connection" % (address[0], stype))
@@ -765,7 +769,7 @@ Sec-WebSocket-Accept: %s\r
                     self.msg("%s: %s" % (address[0], exc.args[0]))
             except Exception:
                 _, exc, _ = sys.exc_info()
-                self.msg("handler exception: %s" % str(exc))
+                self.msg("%s: handler exception: %s" % (address[0], str(exc)) )
                 if self.verbose:
                     self.msg(traceback.format_exc())
         finally:

@@ -13,9 +13,9 @@ class AuthMgr(object):
   @classmethod
   def getTarget(cls,token,ipaddr):
     # Build the query string to the API : This should be changed to fit your API
+    # Actually, all this should be changed to fit :P
     endpoint        = AuthMgr.endPoint+"&arg0="+token+"&arg1[ipaddr]="+ipaddr
     try:
-      #returnXML       = open('map.xml')
       returnXML       = urllib2.urlopen(endpoint,None,5)
       doc             = xml.dom.minidom.parse(returnXML)
       status          = doc.getElementsByTagName("status")[0].firstChild.nodeValue
