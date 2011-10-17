@@ -399,7 +399,7 @@ Sec-WebSocket-Accept: %s\r
 
     def msg(self, msg):
         """ Output message with handler_id prefix. """
-	time = datetime.datetime.now().strftime("%s")
+        time = datetime.datetime.now().strftime("%s")
         if not self.daemon:
             print("% 3d: %s" % (self.handler_id, msg))
         else:
