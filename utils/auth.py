@@ -19,13 +19,14 @@ class AuthMgr(object):
       returnXML       = urllib2.urlopen(endpoint,None,5)
       doc             = xml.dom.minidom.parse(returnXML)
       status          = doc.getElementsByTagName("status")[0].firstChild.nodeValue
+      msg             = doc.getElementsByTagName("msg")[0].firstChild.nodeValue
+      if status == '0':
+        raise Exception("Authentication: "+msg)
       ip              = doc.getElementsByTagName("ip")[0].firstChild.nodeValue
       port            = doc.getElementsByTagName("port")[0].firstChild.nodeValue
       target          = ip + ':' + port
     except:
       raise
-    if status == '0':
-      raise Exception("Authentication failed!")
 
     return target
 
